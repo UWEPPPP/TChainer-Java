@@ -1,5 +1,6 @@
 package com.topview.TChainer;
 
+import com.topview.TChainer.codeUtil.Uint;
 import lombok.Data;
 
 import java.util.Date;
@@ -10,8 +11,10 @@ import java.util.Date;
  */
 @Data
 public class TestData {
-    private int id;
+    @Uint(value = 256)
+    private int  id;
     private Date createTime;
     private Date updateTime;
+    @Uint(value = 256)
     private int version;
 }

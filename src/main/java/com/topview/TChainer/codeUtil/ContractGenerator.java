@@ -1,33 +1,36 @@
 package com.topview.TChainer.codeUtil;
 
-import com.sun.javafx.util.Logging;
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PipedReader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 @Slf4j
 public class ContractGenerator {
-    private static final Map<String, String> typeMapping;
+    private static final String UINT = "1";
+    private static final String UNKNOWN = "unknown";
+    private static final Map<String, String> TYPE_MAPPING;
 
     static {
-        typeMapping = new HashMap<>();
-        typeMapping.put("boolean", "bool");
-        typeMapping.put("byte", "int8");
-        typeMapping.put("short", "int16");
-        typeMapping.put("int", "int32");
-        typeMapping.put("long", "int64");
+        TYPE_MAPPING = new HashMap<>();
+        TYPE_MAPPING.put("boolean", "bool");
+        TYPE_MAPPING.put("byte", "int8");
+        TYPE_MAPPING.put("short", "int16");
+        TYPE_MAPPING.put("int", "int32");
+        TYPE_MAPPING.put("long", "int64");
         // 注意这需要使用Solidity的定点数库或自行实现
-        typeMapping.put("float", "fixed");
+        TYPE_MAPPING.put("float", "fixed");
         // 注意这需要使用Solidity的定点数库或自行实现
-        typeMapping.put("double", "fixed");
-        typeMapping.put("char", "string");
-        typeMapping.put("String", "string");
-        typeMapping.put("Date", "uint");
+        TYPE_MAPPING.put("double", "fixed");
+        TYPE_MAPPING.put("char", "string");
+        TYPE_MAPPING.put("String", "string");
+        TYPE_MAPPING.put("Date", "uint256");
+        TYPE_MAPPING.put(UINT,"uint");
         // 这是Unix时间戳
     }
 
@@ -35,11 +38,9 @@ public class ContractGenerator {
     public static void generateContract(Class<?> beanClass) {
         StringBuilder sb = new StringBuilder();
         String contractName = beanClass.getSimpleName();
-        sb.append("// SPDX-License-Identifier: MIT\n");
-        sb.append("pragma solidity >=0.6.10 <0.8.11;\n\n");
-        sb.append("import \"./DataContract.sol\";\n\n");
+        sb.append(ContractComposition.versionControl());
         sb.append("contract ").append(contractName).append(" is DataContract {\n");
-        sb.append("uint256 private latestDataIndex = 0;\n\n");
+        sb.append("    uint256 private latestDataIndex = 0;\n\n");
         sb.append("    struct Data {\n");
         StringBuilder decodeParams = new StringBuilder();
         StringBuilder decodeReceiveParams = new StringBuilder();
@@ -50,7 +51,18 @@ public class ContractGenerator {
             for (Field field : beanClass.getDeclaredFields()) {
                 length--;
                 String javaType = field.getType().getSimpleName();
-                String solidityType = typeMapping.getOrDefault(javaType, "unknown");
+                String solidityType = UNKNOWN;
+                if(field.getAnnotations().length != 0){
+                    for (Annotation annotation : field.getAnnotations()) {
+                        if (annotation instanceof Uint) {
+                            int value = ((Uint) annotation).value();
+                            solidityType = "uint"+ value;
+                            break;
+                        }
+                    }
+                }else {
+                    solidityType = TYPE_MAPPING.getOrDefault(javaType, UNKNOWN);
+                }
                 if (field.getName() != "id") {
                     if (length > 0) {
                         decodeReceiveParams.append(solidityType).append(" ").append(field.getName()).append(", ");
@@ -67,19 +79,17 @@ public class ContractGenerator {
             }
 
             sb.append("    }\n\n");
-
-            sb.append("    mapping(uint256 => Data) private dataMap;\n\n");
-            sb.append("    mapping(uint256 => uint256) private blockHeightMap;\n\n");
+            sb.append(ContractComposition.mapping());
             sb.append("    // @param place 用于解决同一区块中有相同事件问题\n");
-            sb.append("    event execute").append(beanClass.getSimpleName()).append("Event(uint256 blockHeight,uint8 place, Data data);\n\n");
-
-            StringBuilder sbAfterAdd =ContractFunction.addFunction(sb, decodeParams, decodeReceiveParams, inputParams);
-            StringBuilder sbAfterGet = ContractFunction.getFunction(sbAfterAdd);
-            StringBuilder sbAfterGetEventsBlock = ContractFunction.getEventsBlockFunction(sbAfterGet);
-            StringBuilder sbAfterSet =ContractFunction.setFunction(sbAfterGetEventsBlock, decodeParams, decodeReceiveParams, inputParams);
+            sb.append("    event execute").append(beanClass.getSimpleName()).append("Event(uint256 blockHeight,uint256 dataVersion, Data data);\n\n");
+            String event = "execute"+beanClass.getSimpleName()+"Event";
+            sb.append(ContractComposition.addFunction(decodeParams, decodeReceiveParams, inputParams, event));
+            sb.append(ContractComposition.getFunction());
+            sb.append(ContractComposition.getEventsBlockFunction());
+            sb.append(ContractComposition.setFunction( decodeParams, decodeReceiveParams, inputParams,event));
             sb.append("}\n");
-            String contractCode = sbAfterSet.toString();
-            String filePath = "src/main/resources/"+beanClass.getSimpleName()+".sol";
+            String contractCode = sb.toString();
+            String filePath = "src/main/resources/contract/"+beanClass.getSimpleName()+"/"+beanClass.getSimpleName()+".sol";
             writeContractToFile(contractCode, filePath);
 
         } catch (Exception e)  {
@@ -92,6 +102,12 @@ public class ContractGenerator {
 
     public static void writeContractToFile(String contractCode, String filePath) {
         try {
+            File file = new File(filePath);
+            if (!file.exists()) {
+                if (!file.getParentFile().mkdirs() || !file.createNewFile()) {
+                    log.error("create file error");
+                }
+            }
             FileWriter writer = new FileWriter(filePath);
             writer.write(contractCode);
             writer.close();
