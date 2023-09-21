@@ -44,6 +44,7 @@ public class ContractGenerator {
         StringBuilder decodeParams = new StringBuilder();
         StringBuilder decodeReceiveParams = new StringBuilder();
         StringBuilder inputParams = new StringBuilder();
+        //根据beanClass生成对应数据模板的结构体
         try {
             int length = beanClass.getDeclaredFields().length;
             for (Field field : beanClass.getDeclaredFields()) {
@@ -72,30 +73,22 @@ public class ContractGenerator {
             sb.append("    // @param place 用于解决同一区块中有相同事件问题\n");
             sb.append("    event execute").append(beanClass.getSimpleName()).append("Event(uint256 blockHeight,uint8 place, Data data);\n\n");
 
-            // 添加自定义的函数
-            sb.append("\n    function add(bytes memory data) public override returns (bool) {\n");
-            sb.append("        Data memory inputData;\n");
-            sb.append("        (").append(decodeReceiveParams).append(") = abi.decode(data, (").append(decodeParams).append("));\n");
-            sb.append("        inputData.id = latestDataIndex;\n");
-            sb.append(inputParams);
-            sb.append("        latestDataIndex++;\n");
-            sb.append("        dataMap[latestDataIndex] = inputData;\n");
-            sb.append("        emit  executeEvent(block.number, inputData);\n");
-            sb.append("        blockHeightMap[latestDataIndex] = block.number;\n");
-            sb.append("        return true;\n");
-            sb.append("    }\n");
+            StringBuilder sbAfterAdd =ContractFunction.addFunction(sb, decodeParams, decodeReceiveParams, inputParams);
+            StringBuilder sbAfterGet = ContractFunction.getFunction(sbAfterAdd);
+            StringBuilder sbAfterGetEventsBlock = ContractFunction.getEventsBlockFunction(sbAfterGet);
+            StringBuilder sbAfterSet =ContractFunction.setFunction(sbAfterGetEventsBlock, decodeParams, decodeReceiveParams, inputParams);
+            sb.append("}\n");
+            String contractCode = sbAfterSet.toString();
+            String filePath = "src/main/resources/"+beanClass.getSimpleName()+".sol";
+            writeContractToFile(contractCode, filePath);
 
-
-        } catch (Exception e) {
+        } catch (Exception e)  {
             log.error("generate contract error", e);
         }
 
-        sb.append("}\n");
-        String contractCode = sb.toString();
-        String filePath = "src/main/resources/"+beanClass.getSimpleName()+".sol";
-        writeContractToFile(contractCode, filePath);
 
     }
+
 
     public static void writeContractToFile(String contractCode, String filePath) {
         try {
