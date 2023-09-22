@@ -1,119 +1,111 @@
 package com.topview.TChainer.codeUtil;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fisco.solc.compiler.CompilationResult;
+import org.fisco.solc.compiler.SolidityCompiler;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PipedReader;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
+
+import static org.fisco.solc.compiler.SolidityCompiler.Options.*;
+
+
+/**
+ * @author 刘家辉
+ * @date 2023/09/22
+ */
 @Slf4j
 public class ContractGenerator {
-    private static final String UINT = "1";
-    private static final String UNKNOWN = "unknown";
-    private static final Map<String, String> TYPE_MAPPING;
-
-    static {
-        TYPE_MAPPING = new HashMap<>();
-        TYPE_MAPPING.put("boolean", "bool");
-        TYPE_MAPPING.put("byte", "int8");
-        TYPE_MAPPING.put("short", "int16");
-        TYPE_MAPPING.put("int", "int32");
-        TYPE_MAPPING.put("long", "int64");
-        // 注意这需要使用Solidity的定点数库或自行实现
-        TYPE_MAPPING.put("float", "fixed");
-        // 注意这需要使用Solidity的定点数库或自行实现
-        TYPE_MAPPING.put("double", "fixed");
-        TYPE_MAPPING.put("char", "string");
-        TYPE_MAPPING.put("String", "string");
-        TYPE_MAPPING.put("Date", "uint256");
-        TYPE_MAPPING.put(UINT,"uint");
-        // 这是Unix时间戳
-    }
 
 
     public static void generateContract(Class<?> beanClass) {
         StringBuilder sb = new StringBuilder();
         String contractName = beanClass.getSimpleName();
+        //版本控制
         sb.append(ContractComposition.versionControl());
+        //合约名
         sb.append("contract ").append(contractName).append(" is DataContract {\n");
+        //常量
         sb.append("    uint256 private latestDataIndex = 0;\n\n");
+        //结构体
         sb.append("    struct Data {\n");
-        StringBuilder decodeParams = new StringBuilder();
-        StringBuilder decodeReceiveParams = new StringBuilder();
-        StringBuilder inputParams = new StringBuilder();
-        //根据beanClass生成对应数据模板的结构体
-        try {
-            int length = beanClass.getDeclaredFields().length;
-            for (Field field : beanClass.getDeclaredFields()) {
-                length--;
-                String javaType = field.getType().getSimpleName();
-                String solidityType = UNKNOWN;
-                if(field.getAnnotations().length != 0){
-                    for (Annotation annotation : field.getAnnotations()) {
-                        if (annotation instanceof Uint) {
-                            int value = ((Uint) annotation).value();
-                            solidityType = "uint"+ value;
-                            break;
-                        }
-                    }
-                }else {
-                    solidityType = TYPE_MAPPING.getOrDefault(javaType, UNKNOWN);
-                }
-                if (field.getName() != "id") {
-                    if (length > 0) {
-                        decodeReceiveParams.append(solidityType).append(" ").append(field.getName()).append(", ");
-                        decodeParams.append(solidityType).append(", ");
-                    } else {
-                        decodeReceiveParams.append(solidityType).append(" ").append(field.getName());
-                        decodeParams.append(solidityType);
-                    }
-
-                    inputParams.append("        inputData.").append(field.getName()).append("=").append(field.getName()).append(";\n");
-                }
-                String fieldName = field.getName();
-                sb.append("        ").append(solidityType).append(" ").append(fieldName).append(";\n");
-            }
-
-            sb.append("    }\n\n");
-            sb.append(ContractComposition.mapping());
-            sb.append("    // @param place 用于解决同一区块中有相同事件问题\n");
-            sb.append("    event execute").append(beanClass.getSimpleName()).append("Event(uint256 blockHeight,uint256 dataVersion, Data data);\n\n");
-            String event = "execute"+beanClass.getSimpleName()+"Event";
-            sb.append(ContractComposition.addFunction(decodeParams, decodeReceiveParams, inputParams, event));
-            sb.append(ContractComposition.getFunction());
-            sb.append(ContractComposition.getEventsBlockFunction());
-            sb.append(ContractComposition.setFunction( decodeParams, decodeReceiveParams, inputParams,event));
-            sb.append("}\n");
-            String contractCode = sb.toString();
-            String filePath = "src/main/resources/contract/"+beanClass.getSimpleName()+"/"+beanClass.getSimpleName()+".sol";
-            writeContractToFile(contractCode, filePath);
-
-        } catch (Exception e)  {
-            log.error("generate contract error", e);
-        }
-
+        Map<Integer, StringBuilder> struct = ContractComposition.struct(beanClass);
+        sb.append(struct.get(0));
+        sb.append("    }\n\n");
+        //映射
+        sb.append(ContractComposition.mapping());
+        //事件
+        sb.append("    // @param place 用于解决同一区块中有相同事件问题\n");
+        sb.append("    event execute").append(beanClass.getSimpleName()).append("Event(uint256 blockHeight,uint256 dataVersion, Data data);\n\n");
+        String event = "execute" + beanClass.getSimpleName() + "Event";
+        StringBuilder decodeParams = struct.get(1);
+        StringBuilder decodeReceiveParams = struct.get(2);
+        StringBuilder inputParams = struct.get(3);
+        //add函数
+        sb.append(ContractComposition.addFunction(decodeParams, decodeReceiveParams, inputParams, event));
+        //get函数
+        sb.append(ContractComposition.getFunction());
+        //getEventsBlock函数
+        sb.append(ContractComposition.getEventsBlockFunction());
+        //set函数
+        sb.append(ContractComposition.setFunction(decodeParams, decodeReceiveParams, inputParams, event));
+        sb.append("}\n");
+        String contractCode = sb.toString();
+        String rootPath = "src/main/resources/contract/";
+        writeContractToFile(contractName, contractCode, rootPath);
 
     }
 
-
-    public static void writeContractToFile(String contractCode, String filePath) {
+    public static void writeContractToFile(String contractName, String contractCode, String rootPath) {
         try {
-            File file = new File(filePath);
-            if (!file.exists()) {
-                if (!file.getParentFile().mkdirs() || !file.createNewFile()) {
-                    log.error("create file error");
-                }
+            String solPath = rootPath + "/" + contractName + ".sol";
+            String abiPath = rootPath + "/abi/" + contractName + ".abi";
+            String binPath = rootPath + "/bin/" + contractName + ".bin";
+            File sol = new File(solPath);
+            File abi = new File(abiPath);
+            File bin = new File(binPath);
+            create(sol);
+            create(abi);
+            create(bin);
+            FileWriter writerSol = new FileWriter(solPath);
+            FileWriter writerAbi = new FileWriter(abiPath);
+            FileWriter writerBin = new FileWriter(binPath);
+            write(writerSol, contractCode);
+            SolidityCompiler.Result res = SolidityCompiler.compile(sol, false, true, ABI, BIN, METADATA);
+            if (!res.isFailed()) {
+                // 编译成功，解析返回
+                CompilationResult result = CompilationResult.parse(res.getOutput());
+                // 获取HelloWorld合约的编译结果
+                CompilationResult.ContractMetadata meta = result.getContract(contractName);
+                System.out.printf("contractName: %s\n", meta.metadata);
+                // abi
+                write(writerAbi, meta.abi);
+                // bin
+                write(writerBin, meta.bin);
+                // 其他逻辑
+            } else {
+                log.error("compile contract error" + res.getErrors());
+                // 编译失败，res.getError()保存编译失败的原因
             }
-            FileWriter writer = new FileWriter(filePath);
-            writer.write(contractCode);
-            writer.close();
-            System.out.println("Contract code written to file: " + filePath);
         } catch (IOException e) {
             log.error("write contract to file error", e);
         }
     }
+
+
+    public static void write(FileWriter fw, String content) throws IOException {
+        fw.write(content);
+        fw.close();
+    }
+
+    public static void create(File file) throws IOException {
+        if (!file.exists()) {
+            if (!file.getParentFile().mkdirs() && !file.createNewFile()) {
+                log.error("create file error");
+            }
+        }
+    }
+
 }
