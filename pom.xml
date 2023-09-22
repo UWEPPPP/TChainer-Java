@@ -19,6 +19,19 @@
             <artifactId>fisco-bcos-java-sdk</artifactId>
             <version>3.4.0</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.fisco-bcos/solcJ -->
+        <dependency>
+            <groupId>org.fisco-bcos</groupId>
+            <artifactId>solcJ</artifactId>
+            <version>0.8.11.1</version>
+        </dependency>
+        <dependency>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-simple</artifactId>
+               <version>1.7.25</version>
+               <scope>compile</scope>
+        </dependency>
+
     </dependencies>
 
 

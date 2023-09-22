@@ -12,7 +12,6 @@ useSMCrypto = "false"                       # RPC SM crypto type
 # caCert = "conf/ca.crt"                    # CA cert file path
 # sslCert = "conf/sdk.crt"                  # SSL cert file path
 # sslKey = "conf/sdk.key"                   # SSL key file path
-6
 [network]
 messageTimeout = "10000"
 defaultGroup="group0"                            # Console default group to connect
