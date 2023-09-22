@@ -1,4 +1,4 @@
-package com.topview.TChainer.codeUtil;
+package com.topview.TChainer.contract.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.fisco.solc.compiler.CompilationResult;

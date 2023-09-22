@@ -1,6 +1,7 @@
-package com.topview.TChainer;
+package com.topview.TChainer.template;
 
-import com.topview.TChainer.codeUtil.Uint;
+import com.topview.TChainer.contract.StorageTemplate;
+import com.topview.TChainer.contract.Uint;
 import lombok.Data;
 
 import java.util.Date;
@@ -9,12 +10,11 @@ import java.util.Date;
  * @author 刘家辉
  * @date 2023/09/20
  */
+@StorageTemplate
 @Data
-public class TestData {
+public class TestDataA {
     @Uint(value = 256)
     private int  id;
     private Date createTime;
     private Date updateTime;
-    @Uint(value = 256)
-    private int version;
 }

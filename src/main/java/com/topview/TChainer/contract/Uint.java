@@ -1,4 +1,4 @@
-package com.topview.TChainer.codeUtil;
+package com.topview.TChainer.contract;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,4 +17,5 @@ public @interface Uint {
     * 8 16 32 64 128 256... solidity支持的位数
     **/
     int value() default 256;
+    boolean isArray() default false;
 }
