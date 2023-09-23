@@ -67,6 +67,8 @@ public class ContractComposition {
             //进行类型变换
             solidityType = FieldUtil.typeTransferUitl(field,javaType);
             String fieldName = field.getName();
+
+            //
             sb.append("        ").append(solidityType).append(" ").append(fieldName).append(";\n");
             //addFUn 与 setFun 接收decode的参数
             paramsType = solidityType;
