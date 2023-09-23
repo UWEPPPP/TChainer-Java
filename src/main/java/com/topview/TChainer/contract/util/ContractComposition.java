@@ -1,15 +1,12 @@
 package com.topview.TChainer.contract.util;
 
 import com.topview.TChainer.constant.ContractConstant;
-import com.topview.TChainer.contract.Uint;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.topview.TChainer.constant.ContractConstant.TYPE_MAPPING;
 import static com.topview.TChainer.constant.ContractConstant.UNKNOWN;
 
 /**
@@ -51,31 +48,24 @@ public class ContractComposition {
     public static Map<Integer, StringBuilder> struct(Class<?> beanClass) {
         Map<Integer, StringBuilder> map = new HashMap<>(4);
         StringBuilder sb = getSb();
+        //三个StringBuilder的作用都是为了decode操作
         StringBuilder decodeParams = new StringBuilder();
         StringBuilder decodeReceiveParams = new StringBuilder();
         StringBuilder inputParams = new StringBuilder();
         int length = beanClass.getDeclaredFields().length;
         //根据beanClass生成对应数据模板的结构体
         for (Field field : beanClass.getDeclaredFields()) {
+            //遍历字段
+            //length用于判断是否是最后一个字段，来取消逗号
             length--;
+            //java类型
             String javaType = field.getType().getSimpleName();
+            //solidity类型
             String solidityType = UNKNOWN;
+            //接收decode的参数
             String paramsType;
-            if (field.getAnnotations().length != 0) {
-                for (Annotation annotation : field.getAnnotations()) {
-                    if (annotation instanceof Uint) {
-                        int value = ((Uint) annotation).value();
-                        if (((Uint) annotation).isArray()) {
-                            solidityType = "uint" + value + "[]";
-                        } else {
-                            solidityType = "uint" + value;
-                        }
-                        break;
-                    }
-                }
-            } else {
-                solidityType = TYPE_MAPPING.getOrDefault(javaType, UNKNOWN);
-            }
+            //进行类型变换
+            solidityType = FieldUtil.typeTransferUitl(field,javaType);
             String fieldName = field.getName();
             sb.append("        ").append(solidityType).append(" ").append(fieldName).append(";\n");
             //addFUn 与 setFun 接收decode的参数

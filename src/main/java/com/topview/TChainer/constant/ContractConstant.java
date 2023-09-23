@@ -28,7 +28,6 @@ public class ContractConstant {
         TYPE_MAPPING.put("char", "string");
         TYPE_MAPPING.put("String", "string");
         TYPE_MAPPING.put("Date", "uint256");
-        TYPE_MAPPING.put(UINT, "uint");
         // 这是Unix时间戳
         TYPE_MAPPING.put("boolean[]", "bool[]");
         TYPE_MAPPING.put("byte[]", "int8[]");
