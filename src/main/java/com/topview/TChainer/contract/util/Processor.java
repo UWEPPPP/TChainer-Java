@@ -1,6 +1,7 @@
 package com.topview.TChainer.contract.util;
 
 import com.topview.TChainer.constant.ContractConstant;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
@@ -27,9 +28,10 @@ import static com.topview.TChainer.constant.ContractConstant.BIN_FILE_PATH;
 public class Processor {
     public static final String CONFIG_FILE_PATH = "src/main/resources/config.toml";
     public static final String TEMPLATE_PACKAGE_NAME = "com.topview.TChainer.template";
+    @Getter
     public static AssembleTransactionProcessor assembleTransactionProcessor;
 
-//    public static void init() throws IOException {
+    //    public static void init() throws IOException {
 //        BcosSDK ddd = BcosSDK.build(CONFIG_FILE_PATH);
 //        Client client = ddd.getClient("group0");
 //        CryptoSuite cryptoSuite = client.getCryptoSuite();
