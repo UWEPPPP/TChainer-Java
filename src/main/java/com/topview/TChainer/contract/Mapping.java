@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Mapping {
+    //Only uint string
     String key() default "uint";
     String value() default "uint";
 }

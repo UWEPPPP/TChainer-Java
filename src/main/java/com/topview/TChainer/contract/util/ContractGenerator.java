@@ -1,6 +1,7 @@
 package com.topview.TChainer.contract.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FileUtils;
 import org.fisco.solc.compiler.CompilationResult;
 import org.fisco.solc.compiler.SolidityCompiler;
 
@@ -66,13 +67,10 @@ public class ContractGenerator {
             File sol = new File(solPath);
             File abi = new File(abiPath);
             File bin = new File(binPath);
-            create(sol);
-            create(abi);
-            create(bin);
-            FileWriter writerSol = new FileWriter(solPath);
-            FileWriter writerAbi = new FileWriter(abiPath);
-            FileWriter writerBin = new FileWriter(binPath);
-            write(writerSol, contractCode);
+            FileUtil.create(sol);
+            FileUtil.create(abi);
+            FileUtil.create(bin);
+            FileUtil.write(sol, contractCode);
             SolidityCompiler.Result res = SolidityCompiler.compile(sol, false, true, ABI, BIN, METADATA);
             if (!res.isFailed()) {
                 // 编译成功，解析返回
@@ -81,9 +79,9 @@ public class ContractGenerator {
                 CompilationResult.ContractMetadata meta = result.getContract(contractName);
                 System.out.printf("contractName: %s\n", meta.metadata);
                 // abi
-                write(writerAbi, meta.abi);
+                FileUtil.write(abi, meta.abi);
                 // bin
-                write(writerBin, meta.bin);
+                FileUtil.write(bin, meta.bin);
                 // 其他逻辑
             } else {
                 log.error("compile contract error" + res.getErrors());
@@ -95,17 +93,6 @@ public class ContractGenerator {
     }
 
 
-    public static void write(FileWriter fw, String content) throws IOException {
-        fw.write(content);
-        fw.close();
-    }
 
-    public static void create(File file) throws IOException {
-        if (!file.exists()) {
-            if (!file.getParentFile().mkdirs() && !file.createNewFile()) {
-                log.error("create file error");
-            }
-        }
-    }
 
 }
