@@ -1,12 +1,10 @@
 package com.topview.TChainer.contract.util;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.FileUtils;
 import org.fisco.solc.compiler.CompilationResult;
 import org.fisco.solc.compiler.SolidityCompiler;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
 
@@ -38,9 +36,8 @@ public class ContractGenerator {
         //映射
         sb.append(ContractComposition.mapping());
         //事件
-        sb.append("    // @param place 用于解决同一区块中有相同事件问题\n");
-        sb.append("    event execute").append(beanClass.getSimpleName()).append("Event(uint256 blockHeight,uint256 dataVersion, Data data);\n\n");
         String event = "execute" + beanClass.getSimpleName() + "Event";
+        sb.append(ContractComposition.event(event));
         StringBuilder decodeParams = struct.get(1);
         StringBuilder decodeReceiveParams = struct.get(2);
         StringBuilder inputParams = struct.get(3);
@@ -91,8 +88,6 @@ public class ContractGenerator {
             log.error("write contract to file error", e);
         }
     }
-
-
 
 
 }

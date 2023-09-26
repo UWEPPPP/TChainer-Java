@@ -18,6 +18,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class TraceHistoryServiceImpl implements TraceHistoryService {
     private static final CnsService cnsService = TChainerFactory.getCnsService();
@@ -26,25 +27,40 @@ public class TraceHistoryServiceImpl implements TraceHistoryService {
     public <T> List<T> traceHistory(int id, Class<T> clazz) throws ContractCodecException, TransactionBaseException {
         Client client = Processor.getClient();
         TransactionDecoderInterface decoder = new TransactionDecoderService(Processor.getCryptoSuite(), client.isWASM());
-        BcosBlock blockHashByNumber = client.getBlockByNumber(BigInteger.valueOf(id),false,false);
-        BcosBlock.Block block = blockHashByNumber.getBlock();
-        List<BcosBlock.TransactionObject> transactions = block.getTransactionObject();
-        List<Map<String, List<List<Object>>>> decode = new ArrayList<>();
         CnsContainer latest = cnsService.selectByNameAndVersion(clazz.getSimpleName(), "latest");
         String abi = latest.getAbi();
-        for (BcosBlock.TransactionObject object:
-                transactions) {
-            String hash1 = object.getHash();
-            BcosTransactionReceipt transactionReceipt = client.getTransactionReceipt(hash1, false);
-            Map<String, List<List<Object>>> stringListMap = decoder.decodeEvents(abi, transactionReceipt.getTransactionReceipt().getLogEntries());
-            decode.add(stringListMap);
-        }
+        String address = latest.getAddress();
         Integer eventsBlock = dataService.getEventsBlock(id, clazz);
-        for (Map<String, List<List<Object>>> stringListMap:
-                decode) {
-            List<List<Object>> list = stringListMap.get("blockHeight");
-
-        }
-        return null;
+        List<T> result = new ArrayList<>();
+        Integer blockHeight = eventsBlock;
+        do {
+            BcosBlock blockHashByNumber = client.getBlockByNumber(BigInteger.valueOf(blockHeight),false,false);
+            BcosBlock.Block block = blockHashByNumber.getBlock();
+            List<BcosBlock.TransactionObject> transactions = block.getTransactionObject();
+            for (BcosBlock.TransactionObject transaction :
+                    transactions) {
+                if (!transaction.getTo().equals(address)) {
+                    continue;
+                }
+                BcosTransactionReceipt transactionReceipt = client.getTransactionReceipt(transaction.getHash(), false);
+                Map<String, List<List<Object>>> stringListMap = decoder.decodeEvents(abi, transactionReceipt.getTransactionReceipt().getLogEntries());
+                if (stringListMap.containsKey("execute" + clazz.getSimpleName() + "Event")) {
+                    List<List<Object>> lists = stringListMap.get("execute" + clazz.getSimpleName() + "Event");
+                    for (List<Object> objects :
+                            lists) {
+                        //版本问题未解决
+                        if (Objects.equals(objects.get(1),id)) {
+                            result.add((T) objects.get(3));
+                            blockHeight = (Integer) objects.get(0);
+                            break;
+                        }
+                }
+                }else {
+                    continue;
+                }
+                break;
+            }
+        }while (blockHeight > 0);
+        return result;
     }
 }

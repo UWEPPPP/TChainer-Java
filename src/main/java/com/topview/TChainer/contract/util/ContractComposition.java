@@ -94,6 +94,19 @@ public class ContractComposition {
 
 
     /**
+     * 事件
+     * @param event
+     * @return {@link StringBuilder}
+     */
+    public static StringBuilder event(String event){
+        StringBuilder sb = getSb();
+        sb.append("    // @param place 用于解决同一区块中有相同事件问题\n");
+        sb.append("    event ").append(event).append("(uint256 blockHeight,uint id,uint256 dataVersion, Data data);\n\n");
+        return  sb;
+    }
+
+
+    /**
      * @param decodeParams
      * @param decodeReceiveParams
      * @param inputParams
@@ -109,7 +122,7 @@ public class ContractComposition {
         sb.append(inputParams);
         sb.append("        dataMap[id] = inputData;\n");
         sb.append("        dataVersionsMap[latestDataIndex]++;\n");
-        sb.append("        emit  ").append(event).append("(block.number,dataVersionsMap[id] ,inputData);\n");
+        sb.append("        emit  ").append(event).append("(blockHeightMap[id],id,dataVersionsMap[id] ,inputData);\n");
         sb.append("        blockHeightMap[id] = block.number;\n");
         sb.append("        dataVersionsMap[id]++;\n");
         sb.append("        return true;\n");
@@ -156,7 +169,7 @@ public class ContractComposition {
         sb.append("        latestDataIndex++;\n");
         sb.append("        dataMap[latestDataIndex] = inputData;\n");
         sb.append("        dataVersionsMap[latestDataIndex]++;\n");
-        sb.append("        emit  ").append(event).append("(block.number,dataVersionsMap[latestDataIndex] ,inputData);\n");
+        sb.append("        emit  ").append(event).append("(blockHeightMap[id],id,dataVersionsMap[latestDataIndex] ,inputData);\n");
         sb.append("        blockHeightMap[latestDataIndex] = block.number;\n");
         sb.append("        dataVersionsMap[latestDataIndex]++;\n");
         sb.append("        return true;\n");
