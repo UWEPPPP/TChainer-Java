@@ -7,9 +7,9 @@ public interface DataService {
 
      <T>T get(int id,Class<T> clazz) throws InstantiationException, IllegalAccessException, TransactionBaseException, ContractCodecException;
 
-     <T>Boolean set(int id, T data);
+     <T>Boolean set(int id, T data) throws TransactionBaseException, ContractCodecException;
 
-     <T>Boolean add(T data);
+     <T>Boolean add(T data) throws TransactionBaseException, ContractCodecException;
 
-     Integer getEventsBlock(Integer id);
+     <T>Integer getEventsBlock(Integer id,Class<T> clazz) throws TransactionBaseException, ContractCodecException;
 }

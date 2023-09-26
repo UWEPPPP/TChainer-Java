@@ -1,5 +1,7 @@
 package com.topview.TChainer.service;
 
+import com.topview.TChainer.entity.CnsContainer;
+
 /**
  * @author 刘家辉
  * @date 2023/09/25
@@ -20,7 +22,7 @@ public interface CnsService {
      * @param contractName 合约名
      * @return {@link String}
      */
-    String selectByName(String contractName);
+    CnsContainer selectByName(String contractName);
 
     /**
      * 返回合约指定版本的地址
@@ -28,5 +30,5 @@ public interface CnsService {
      * @param version 版本
      * @return {@link String}
      */
-    String selectByNameAndVersion(String contractName, String version);
+    CnsContainer selectByNameAndVersion(String contractName, String version);
 }

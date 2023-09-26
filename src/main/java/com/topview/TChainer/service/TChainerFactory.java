@@ -1,11 +1,14 @@
 package com.topview.TChainer.service;
 
+import com.topview.TChainer.service.impl.CnsServiceImpl;
+import com.topview.TChainer.service.impl.DataServiceImpl;
+
 public class TChainerFactory {
     public static DataService getDataService() {
-        return null;
+        return new DataServiceImpl();
     }
 
     public static CnsService getCnsService() {
-        return null;
+        return new CnsServiceImpl();
     }
 }

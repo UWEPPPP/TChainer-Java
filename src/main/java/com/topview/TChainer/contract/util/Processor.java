@@ -1,24 +1,12 @@
 package com.topview.TChainer.contract.util;
 
-import com.topview.TChainer.constant.ContractConstant;
+import com.topview.TChainer.config.Property;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.fisco.bcos.sdk.v3.BcosSDK;
 import org.fisco.bcos.sdk.v3.client.Client;
-import org.fisco.bcos.sdk.v3.codec.ContractCodecException;
 import org.fisco.bcos.sdk.v3.crypto.CryptoSuite;
-import org.fisco.bcos.sdk.v3.crypto.keypair.CryptoKeyPair;
-import org.fisco.bcos.sdk.v3.model.TransactionReceipt;
 import org.fisco.bcos.sdk.v3.transaction.manager.AssembleTransactionProcessor;
-import org.fisco.bcos.sdk.v3.transaction.manager.TransactionProcessorFactory;
-import org.fisco.bcos.sdk.v3.transaction.model.dto.TransactionResponse;
-import org.fisco.bcos.sdk.v3.transaction.model.exception.TransactionBaseException;
-
-import java.io.IOException;
-import java.util.ArrayList;
-
-import static com.topview.TChainer.constant.ContractConstant.ABI_FILE_PATH;
-import static com.topview.TChainer.constant.ContractConstant.BIN_FILE_PATH;
 
 /**
  * @author 刘家辉
@@ -26,10 +14,19 @@ import static com.topview.TChainer.constant.ContractConstant.BIN_FILE_PATH;
  */
 @Slf4j
 public class Processor {
-    public static final String CONFIG_FILE_PATH = "src/main/resources/config.toml";
-    public static final String TEMPLATE_PACKAGE_NAME = "com.topview.TChainer.template";
+    private static final String CONFIG_FILE_PATH = "src/main/resources/config.toml";
+    private static final String TEMPLATE_PACKAGE_NAME = "com.topview.TChainer.template";
     @Getter
-    public static AssembleTransactionProcessor assembleTransactionProcessor;
+    private static final Client client;
+    @Getter
+    private static final CryptoSuite cryptoSuite;
+    @Getter
+    private static AssembleTransactionProcessor assembleTransactionProcessor;
+
+    static {
+        client = BcosSDK.build(CONFIG_FILE_PATH).getClient(Property.getProperty("groupId"));
+        cryptoSuite = client.getCryptoSuite();
+    }
 
     //    public static void init() throws IOException {
 //        BcosSDK ddd = BcosSDK.build(CONFIG_FILE_PATH);

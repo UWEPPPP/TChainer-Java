@@ -1,5 +1,6 @@
 package com.topview.TChainer.service.impl;
 
+import com.topview.TChainer.entity.CnsContainer;
 import com.topview.TChainer.service.CnsService;
 
 public class CnsServiceImpl implements CnsService {
@@ -9,12 +10,12 @@ public class CnsServiceImpl implements CnsService {
     }
 
     @Override
-    public String selectByName(String name) {
+    public CnsContainer selectByName(String name) {
         return null;
     }
 
     @Override
-    public String selectByNameAndVersion(String contractName, String version) {
+    public CnsContainer selectByNameAndVersion(String contractName, String version) {
         return null;
     }
 }
