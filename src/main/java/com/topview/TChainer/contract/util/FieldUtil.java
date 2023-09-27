@@ -1,5 +1,6 @@
 package com.topview.TChainer.contract.util;
 
+import com.topview.TChainer.contract.Address;
 import com.topview.TChainer.contract.Mapping;
 import com.topview.TChainer.contract.Uint;
 
@@ -25,7 +26,14 @@ public class FieldUtil {
                     break;
                 }
                 if (annotation instanceof Mapping) {
+                    //暂定,有待考虑
+                    String key=((Mapping) annotation).key();
+                    String value= ((Mapping) annotation).value();
+                    solidityType="mapping("+ key+ " =>"+value+")";
+                }
 
+                if (annotation instanceof Address){
+                    solidityType="address";
                 }
 
 
