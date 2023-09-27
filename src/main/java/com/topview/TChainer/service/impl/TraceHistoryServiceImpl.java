@@ -48,7 +48,7 @@ public class TraceHistoryServiceImpl implements TraceHistoryService {
                     List<List<Object>> lists = stringListMap.get("execute" + clazz.getSimpleName() + "Event");
                     for (List<Object> objects :
                             lists) {
-                        //版本问题未解决
+                        //版本问题未解决 再来个结构体？
                         if (Objects.equals(objects.get(1),id)) {
                             result.add((T) objects.get(3));
                             blockHeight = (Integer) objects.get(0);
